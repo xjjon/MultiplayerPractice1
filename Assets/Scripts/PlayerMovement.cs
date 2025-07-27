@@ -26,6 +26,7 @@ public class PlayerMovement : NetworkBehaviour
             inputZ = Input.GetAxis("Vertical");
         }
 
+
         controller.Move(moveDirection);
     }
     
