@@ -27,7 +27,10 @@ namespace MultiplayerPractice1.Assets.Scripts
 
         private void Despawn()
         {
-            NetworkObject.Despawn();
+            if (NetworkObject && NetworkObject.IsSpawned)
+            {
+                NetworkObject.Despawn();
+            }
         }
     }
 }
