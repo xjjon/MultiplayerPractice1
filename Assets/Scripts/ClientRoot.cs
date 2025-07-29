@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -13,17 +14,26 @@ namespace MultiplayerPractice1.Assets.Scripts
         {
             if (IsOwner)
             {
-                SpawnPropServerRpc();
+                StartCoroutine(SetupPlayerDelayed());
             }
 
             _dataManager = FindAnyObjectByType<DataManager>();
         }
 
-        [ServerRpc]
-        private void SpawnPropServerRpc(ServerRpcParams rpcParams = default)
+        private IEnumerator SetupPlayerDelayed()
         {
-            GameObject propInstance = Instantiate(_playerPrefab);
-            propInstance.GetComponent<NetworkObject>().SpawnWithOwnership(rpcParams.Receive.SenderClientId);
+            // Wait a frame to ensure all NetworkObjects are properly spawned
+            yield return null;
+            
+            var playerCatalog = FindAnyObjectByType<PlayerCatalog>();
+            if (playerCatalog != null && playerCatalog.IsSpawned)
+            {
+                playerCatalog.SetupPlayerServerRpc();
+            }
+            else
+            {
+                Debug.LogError("PlayerCatalog not found or not spawned in scene!");
+            }
         }
 
         void Update()
