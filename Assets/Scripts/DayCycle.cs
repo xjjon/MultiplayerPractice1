@@ -1,4 +1,4 @@
-using System.Threading.Tasks;
+using System.Collections;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -19,7 +19,7 @@ namespace MultiplayerPractice1.Assets.Scripts
         {
             if (IsServer)
             {
-                StartDayCycle();
+                StartCoroutine(DayCycleCoroutine());
             }
 
             timeOfDay.OnValueChanged += OnTimeOfDayChanged;
@@ -30,16 +30,16 @@ namespace MultiplayerPractice1.Assets.Scripts
             dayTimeText.text = $"Day Time: {newValue:F2} / {dayLength:F2} seconds";
         }
 
-        private async void StartDayCycle()
+        private IEnumerator DayCycleCoroutine()
         {
             while (true)
             {
-                timeOfDay.Value += Time.deltaTime;
-                if (timeOfDay.Value >= dayLength)
-                {
-                    timeOfDay.Value = 0f;
-                }
-                await Task.Yield();
+            timeOfDay.Value += Time.deltaTime;
+            if (timeOfDay.Value >= dayLength)
+            {
+                timeOfDay.Value = 0f;
+            }
+            yield return null;
             }
         }
     }
