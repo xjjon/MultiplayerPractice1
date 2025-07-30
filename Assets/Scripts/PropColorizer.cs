@@ -34,16 +34,24 @@ public class PropColorizer : NetworkBehaviour
     {
         // Subscribe to value changes
         colorIndex.OnValueChanged += OnColorChanged;
+        DetermineColor();
+        ApplyColor(colorIndex.Value);
+    }
 
+    private void DetermineColor()
+    {
         if (IsServer)
         {
             // The server determines the color based on the owner's ID
             int index = (int)OwnerClientId % playerColors.Length;
             colorIndex.Value = index;
         }
+    }
 
-        // Immediately apply the current color on spawn
-        // This ensures the host and clients see the color right away
+    protected override void OnOwnershipChanged(ulong previous, ulong current)
+    {
+        base.OnOwnershipChanged(previous, current);
+        DetermineColor();
         ApplyColor(colorIndex.Value);
     }
 
