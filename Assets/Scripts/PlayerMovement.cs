@@ -7,8 +7,6 @@ public class PlayerMovement : NetworkBehaviour
     public float gravity = -9.81f;
     public CharacterController controller;
 
-    private Vector3 velocity;
-
     void Start()
     {
         controller = GetComponent<CharacterController>();
@@ -24,27 +22,33 @@ public class PlayerMovement : NetworkBehaviour
         {
             inputX = Input.GetAxis("Horizontal");
             inputZ = Input.GetAxis("Vertical");
+
+            UpdateMovementServerRpc(new Vector3(inputX, 0, inputZ));
         }
 
+        if (IsServer)
+        {
+            MovePlayer();
+        }
+    }
+
+    private void MovePlayer()
+    {
+        moveDirection = new Vector3(inputX, 0, inputZ) * speed * Time.deltaTime;
 
         controller.Move(moveDirection);
-    }
-    
-    [Rpc(SendTo.Server)]
-    private void UpdateInputServerRpc(Vector3 moveInput)
-    {
-        moveDirection = moveInput;
-    }
-
-    private void LateUpdate()
-    {
-        if (!IsOwner)
+        if (moveDirection != Vector3.zero)
         {
-            return;
+            transform.rotation = Quaternion.LookRotation(moveDirection);
         }
+    }
 
-        UpdateInputServerRpc(
-            new Vector3(inputX, 0, inputZ) * speed * Time.deltaTime
-        );
+    [ServerRpc(RequireOwnership = false)]
+    private void UpdateMovementServerRpc(Vector3 inputDirection)
+    {
+        // The server receives the input and updates its state for this player.
+        // These values will be used in the server's Update loop to move the character.
+        inputX = inputDirection.x;
+        inputZ = inputDirection.z;
     }
 }

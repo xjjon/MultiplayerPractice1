@@ -124,7 +124,6 @@ namespace MultiplayerPractice1.Assets.Scripts.Projectiles
 
             // Tell the client visual manager to spawn effects on all clients
             ProjectileVisualManager.Instance.HandleImpactClientRpc(weapon.Id, position, normal);
-            UnityEngine.Debug.Log($"Processed hit for weapon {weapon.Id} at position {position} with normal {normal}");
         }
 
         private WeaponData GetWeaponDataById(int weaponId)
