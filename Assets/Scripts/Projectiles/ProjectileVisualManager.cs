@@ -11,6 +11,8 @@ public class ProjectileVisualManager : NetworkBehaviour
 
     private Dictionary<int, WeaponData> _weaponDataDictionary = new Dictionary<int, WeaponData>();
 
+    private Dictionary<ulong, VisualProjectile> _activeVisualProjectiles = new Dictionary<ulong, VisualProjectile>();
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -32,9 +34,9 @@ public class ProjectileVisualManager : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void FireLocalVisualClientRPC(int id, Vector3 origin, Vector3 direction)
+    public void FireLocalVisualClientRPC(int weaponId, ulong projectileId, Vector3 origin, Vector3 direction)
     {
-        WeaponData weapon = GetWeaponDataById(id);
+        WeaponData weapon = GetWeaponDataById(weaponId);
         if (weapon == null) return;
 
         if (weapon.VisualProjectilePrefab != null)
@@ -43,21 +45,26 @@ public class ProjectileVisualManager : NetworkBehaviour
             if (visual.TryGetComponent<VisualProjectile>(out var visualProj))
             {
                 visualProj.Initialize(origin, direction, weapon.Speed);
+                _activeVisualProjectiles[projectileId] = visualProj;
             }
         }
     }
 
     [ClientRpc]
-    public void HandleImpactClientRpc(int weaponId, Vector3 position, Vector3 normal)
+    public void HandleImpactClientRpc(int weaponId, ulong projectileId, Vector3 position, Vector3 normal)
     {
         // In a real game, look up the weapon data to get the correct impact prefab.
         WeaponData weapon = GetWeaponDataById(weaponId);
-        if (weapon == null || weapon.ImpactVfxPrefab == null) return;
 
         if (weapon.ImpactVfxPrefab != null)
         {
             Instantiate(weapon.ImpactVfxPrefab, position, Quaternion.LookRotation(normal));
         }
+
+        var projectile = _activeVisualProjectiles[projectileId];
+        _activeVisualProjectiles.Remove(projectileId);
+        Destroy(projectile.gameObject);
+
 
         // Play impact SFX  
         // AudioSource.PlayClipAtPoint(weapon.ImpactSfx, position);

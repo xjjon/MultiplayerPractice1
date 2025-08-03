@@ -6,15 +6,14 @@ public class PlayerMovement : NetworkBehaviour
     public float speed = 5f;
     public float gravity = -9.81f;
     public CharacterController controller;
+    public float inputX;
+    public float inputZ;
+    public Vector3 moveDirection;
 
     void Start()
     {
         controller = GetComponent<CharacterController>();
     }
-
-    public float inputX;
-    public float inputZ;
-    public Vector3 moveDirection;
 
     void Update()
     {
@@ -46,8 +45,6 @@ public class PlayerMovement : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void UpdateMovementServerRpc(Vector3 inputDirection)
     {
-        // The server receives the input and updates its state for this player.
-        // These values will be used in the server's Update loop to move the character.
         inputX = inputDirection.x;
         inputZ = inputDirection.z;
     }

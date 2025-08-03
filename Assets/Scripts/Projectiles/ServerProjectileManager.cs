@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Diagnostics;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -12,6 +11,7 @@ namespace MultiplayerPractice1.Assets.Scripts.Projectiles
         // This class is NOT a MonoBehaviour. It's just a lightweight data container.
         private class LogicalProjectile
         {
+            public ulong Id;
             public ulong OwnerId;
             public WeaponData Weapon;
             public Vector3 LastPosition;
@@ -27,13 +27,15 @@ namespace MultiplayerPractice1.Assets.Scripts.Projectiles
             }
         }
 
+        private ulong _nextProjectileId = 0;
+
         private List<LogicalProjectile> _simulatedProjectiles = new List<LogicalProjectile>();
 
         private void Awake()
         {
             if (Instance != null && Instance != this)
             {
-                Destroy(this.gameObject);
+                Destroy(gameObject);
             }
             else
             {
@@ -46,32 +48,30 @@ namespace MultiplayerPractice1.Assets.Scripts.Projectiles
             // This script should only run on the server.
             if (!IsServer)
             {
-                this.enabled = false;
+                enabled = false;
             }
         }
 
         private void FixedUpdate()
         {
-            // Update all active simulated projectiles
             for (int i = _simulatedProjectiles.Count - 1; i >= 0; i--)
             {
-                LogicalProjectile proj = _simulatedProjectiles[i];
-                proj.Tick(Time.fixedDeltaTime);
+                LogicalProjectile projectile = _simulatedProjectiles[i];
+                projectile.Tick(Time.fixedDeltaTime);
 
                 // Check for collision
-                if (Physics.SphereCast(proj.LastPosition, 0.1f, (proj.CurrentPosition - proj.LastPosition).normalized, out RaycastHit hit, Vector3.Distance(proj.LastPosition, proj.CurrentPosition), proj.Weapon.HitMask))
+                if (Physics.SphereCast(projectile.LastPosition, 0.1f, (projectile.CurrentPosition - projectile.LastPosition).normalized, out RaycastHit hit, Vector3.Distance(projectile.LastPosition, projectile.CurrentPosition), projectile.Weapon.HitMask))
                 {
-                    // We have a hit!
-                    ProcessHit(proj.OwnerId, proj.Weapon, hit.point, hit.normal);
+                    ProcessHit(projectile);
                     _simulatedProjectiles.RemoveAt(i);
                     continue;
                 }
 
                 // Check for lifetime expiration
-                if (proj.TimeToLive <= 0)
+                if (projectile.TimeToLive <= 0)
                 {
                     _simulatedProjectiles.RemoveAt(i);
-                    ProcessHit(proj.OwnerId, proj.Weapon, proj.CurrentPosition, Vector3.up);
+                    ProcessHit(projectile);
                 }
             }
         }
@@ -98,7 +98,7 @@ namespace MultiplayerPractice1.Assets.Scripts.Projectiles
         {
             if (Physics.Raycast(origin, direction, out RaycastHit hit, weapon.Range, weapon.HitMask))
             {
-                ProcessHit(ownerId, weapon, hit.point, hit.normal);
+                // ProcessHit(ownerId, weapon, hit.point, hit.normal);
             }
         }
 
@@ -106,6 +106,7 @@ namespace MultiplayerPractice1.Assets.Scripts.Projectiles
         {
             LogicalProjectile proj = new LogicalProjectile
             {
+                Id = _nextProjectileId++,
                 OwnerId = ownerId,
                 Weapon = weapon,
                 LastPosition = origin,
@@ -114,16 +115,16 @@ namespace MultiplayerPractice1.Assets.Scripts.Projectiles
                 TimeToLive = weapon.Lifetime
             };
             _simulatedProjectiles.Add(proj);
-            ProjectileVisualManager.Instance.FireLocalVisualClientRPC(weapon.Id, origin, direction);
+            ProjectileVisualManager.Instance.FireLocalVisualClientRPC(weapon.Id, proj.Id, origin, direction);
         }
 
-        private void ProcessHit(ulong ownerId, WeaponData weapon, Vector3 position, Vector3 normal)
+        private void ProcessHit(LogicalProjectile projectile)
         {
             // TODO: Apply damage to the hit object on the server
             // e.g., if (hitObject.TryGetComponent<Health>(out var health)) { health.TakeDamage(weapon.Damage); }
 
             // Tell the client visual manager to spawn effects on all clients
-            ProjectileVisualManager.Instance.HandleImpactClientRpc(weapon.Id, position, normal);
+            ProjectileVisualManager.Instance.HandleImpactClientRpc(projectile.Weapon.Id, projectile.Id, projectile.CurrentPosition, Vector3.up);
         }
 
         private WeaponData GetWeaponDataById(int weaponId)

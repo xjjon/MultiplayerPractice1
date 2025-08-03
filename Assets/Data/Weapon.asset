@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: 0
   Type: 1
   VisualProjectilePrefab: {fileID: 1575042351555546116, guid: 763bf5ee9f23d024c94e116183636f26, type: 3}
-  ImpactVfxPrefab: {fileID: 0}
+  ImpactVfxPrefab: {fileID: 3100914628742296243, guid: 7df87ac8aa976bb4582bd822eee3434e, type: 3}
   ImpactSfx: {fileID: 0}
   Speed: 10
   Lifetime: 5
